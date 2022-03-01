@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 from datetime import date
 
 import requests
@@ -11,12 +12,22 @@ from cn2an import cn2an, an2cn
 from lunar_python import Lunar, Solar
 from lunar_python.util import HolidayUtil
 
-# pip install opencv-python
+# pip3 install opencv-python
 # pip3 install requests
 # pip3 install cn2an
 # pip3 install pillow
-# matplotlib、pandas、tqdm
+# matplotlib、pandas、tqdm、lunar_python
+
+#/Users/xushuzhan/project/e-Paper/RaspberryPi_JetsonNano/python
+print(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"lib"))
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"main"))
+
 from main.utils.text_utils import WordWrap
+
+# 墨水屏依赖
+from waveshare_epd import epd7in5_V2
 
 logging.basicConfig(level=logging.DEBUG,
                     filemode='w', format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y-%d-%m %H:%M:%S')
@@ -62,7 +73,10 @@ class CalendarPainter(object):
         self.draw_divider()
         self.draw_calendar()
         self.draw_weather()
-        self.print()
+        # today_weather_ic = Image.open(os.path.join(image_dir, "pony.jpg")).resize((800, 480),Image.ANTIALIAS)
+        # self.canvas.paste(today_weather_ic, (0, 0))
+        # self.print()
+        self.printToScreen()
 
     # 初始化画布、画笔
     def init_canvas(self):
@@ -133,7 +147,8 @@ class CalendarPainter(object):
                           ((weather_center_x - offset).__int__(), (weather_center_y - weather_ic_h).__int__()))
         self.draw.text((weather_center_x + offset - today_weather_w, weather_center_y - weather_ic_h),
                        today_weather, font=font24_bold, fill=0)
-        self.draw.text((weather_center_x + offset - today_weather_w, weather_center_y - weather_ic_h/2), "晴", font=font14, fill=0)
+        self.draw.text((weather_center_x + offset - today_weather_w, weather_center_y - weather_ic_h / 2), "晴",
+                       font=font14, fill=0)
         # 气温描述
         desc = "今晚晴。明天晴，比今天暖和一些（13°），有风, 空气不错。"
         desc_w, desc_h = font14.getsize(desc)
@@ -147,13 +162,32 @@ class CalendarPainter(object):
         self.draw.text((zero_x + self.padding, 310), "明天", font=font14_bold, fill=0)
         self.draw.text((zero_x + self.padding, 310 + 20), "2022/2/27", font=font14, fill=0)
         tomorrow_weather_w, tomorrow_weather_h = 40, 40
-        today_weather_ic = Image.open(os.path.join(image_dir, "test_weather_ic.png")).resize((40, 40)).convert("1")
+        today_weather_ic = Image.open(os.path.join(image_dir, "test_weather_ic.png")).resize((40, 40))
         self.canvas.paste(today_weather_ic, (weather_center_x.__int__() - (tomorrow_weather_w / 2).__int__(), 310))
         self.draw.text((zero_x + 180, 310 + 10), "1° ~  12°", font=font14, fill=0)
 
     # 输出最后的图片
     def print(self):
         self.canvas.save('blur.jpg', 'jpeg')
+
+    def printToScreen(self):
+        try:
+            logging.info("epd7in5_V2 pony pi")
+            epd = epd7in5_V2.EPD()
+            logging.info("init and Clear")
+            epd.init()
+            epd.Clear()
+            epd.display(epd.getbuffer(self.canvas))
+            logging.info("Goto Sleep...")
+            epd.sleep()
+
+        except IOError as e:
+            logging.info(e)
+
+        except KeyboardInterrupt:
+            logging.info("ctrl + c:")
+            epd7in5_V2.epdconfig.module_exit()
+            exit()
 
 
 painter = CalendarPainter()
