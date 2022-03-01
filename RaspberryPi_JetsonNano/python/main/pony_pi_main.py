@@ -16,7 +16,7 @@ from lunar_python.util import HolidayUtil
 # pip3 install cn2an
 # pip3 install pillow
 # matplotlib、pandas、tqdm
-
+from main.utils.text_utils import WordWrap
 
 logging.basicConfig(level=logging.DEBUG,
                     filemode='w', format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y-%d-%m %H:%M:%S')
@@ -26,6 +26,7 @@ image_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets/im
 
 font12_light = ImageFont.truetype(os.path.join(font_dir, "微软雅黑Light.ttc"), 12)
 font14 = ImageFont.truetype(os.path.join(font_dir, "微软雅黑.ttc"), 14)
+font14_bold = ImageFont.truetype(os.path.join(font_dir, "微软雅黑Bold.ttc"), 14)
 font18 = ImageFont.truetype(os.path.join(font_dir, "微软雅黑.ttc"), 18)
 font18_bold = ImageFont.truetype(os.path.join(font_dir, "微软雅黑Bold.ttc"), 18)
 font24 = ImageFont.truetype(os.path.join(font_dir, "微软雅黑.ttc"), 24)
@@ -114,11 +115,6 @@ class CalendarPainter(object):
 
     def draw_weather(self):
         logging.debug("draw_weather")
-        # print(requests.__file__)
-        # response = requests.get("http://www.sina.com")
-        # print(response.request.headers)
-        # print(response.content.decode('utf-8'))
-
         zero_x = self.calendar_w
         zero_y = 0
         # 画城市
@@ -126,16 +122,34 @@ class CalendarPainter(object):
         # 今日温度
         weather_center_x = zero_x + self.weather_w / 2
         weather_center_y = zero_y + self.weather_h / 2
-        weather_ic_w = 65
-        weather_ic_h = 65
-        self.draw.point((weather_center_x, weather_center_y))
-        self.draw.rectangle((weather_center_x - 130 / 2, weather_center_y - 130 / 2, weather_center_x + 130 / 2,
-                             weather_center_y + 130 / 2,), outline=0)
-        self.draw.rectangle((weather_center_x - weather_ic_w, weather_center_y - weather_ic_w / 2,
-                             weather_center_x, weather_center_y + weather_ic_w / 2,), outline=0)
-        bmp = Image.open(os.path.join(image_dir, "test_weather_ic.png")).resize((weather_ic_w,weather_ic_h)).convert("1")
-        self.canvas.paste(bmp, ((weather_center_x - weather_ic_w).__int__(), (weather_center_y - weather_ic_w / 2).__int__()))
-        self.draw.text((weather_center_x , weather_center_y - weather_ic_w / 2), "11°", font=font24_bold, fill=0)
+        weather_ic_w, weather_ic_h = 65, 65
+        today_weather_ic = Image.open(os.path.join(image_dir, "test_weather_ic.png")).resize(
+            (weather_ic_w, weather_ic_h)).convert(
+            "1")
+        today_weather = "11°"
+        today_weather_h, today_weather_w = font24_bold.getsize(today_weather)
+        offset = (today_weather_w + weather_ic_w) / 2
+        self.canvas.paste(today_weather_ic,
+                          ((weather_center_x - offset).__int__(), (weather_center_y - weather_ic_h).__int__()))
+        self.draw.text((weather_center_x + offset - today_weather_w, weather_center_y - weather_ic_h),
+                       today_weather, font=font24_bold, fill=0)
+        self.draw.text((weather_center_x + offset - today_weather_w, weather_center_y - weather_ic_h/2), "晴", font=font14, fill=0)
+        # 气温描述
+        desc = "今晚晴。明天晴，比今天暖和一些（13°），有风, 空气不错。"
+        desc_w, desc_h = font14.getsize(desc)
+        if desc_w < self.weather_w - self.padding * 2:
+            self.draw.text((weather_center_x - desc_w / 2, weather_center_y + today_weather_h), desc, font=font14,
+                           fill=0)
+        else:
+            WordWrap().draw_text(xy=(zero_x + self.padding, weather_center_y + today_weather_h), text=desc, font=font14,
+                                 draw=self.draw, width=self.weather_w - 2 * self.padding)
+        # 明天预报
+        self.draw.text((zero_x + self.padding, 310), "明天", font=font14_bold, fill=0)
+        self.draw.text((zero_x + self.padding, 310 + 20), "2022/2/27", font=font14, fill=0)
+        tomorrow_weather_w, tomorrow_weather_h = 40, 40
+        today_weather_ic = Image.open(os.path.join(image_dir, "test_weather_ic.png")).resize((40, 40)).convert("1")
+        self.canvas.paste(today_weather_ic, (weather_center_x.__int__() - (tomorrow_weather_w / 2).__int__(), 310))
+        self.draw.text((zero_x + 180, 310 + 10), "1° ~  12°", font=font14, fill=0)
 
     # 输出最后的图片
     def print(self):
