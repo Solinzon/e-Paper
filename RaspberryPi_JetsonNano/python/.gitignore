@@ -1,0 +1,5 @@
+**/.idea
+**/lib/__pycache__
+**/lib/waveshare_epd/__pycache__
+**/main/__pycache__
+**/main/utils/__pycache__
