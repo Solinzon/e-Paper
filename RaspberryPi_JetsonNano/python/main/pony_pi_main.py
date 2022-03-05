@@ -73,9 +73,10 @@ class CalendarPainter(object):
         self.draw_divider()
         self.draw_calendar()
         self.draw_weather()
-        # today_weather_ic = Image.open(os.path.join(image_dir, "pony.jpg")).resize((800, 480),Image.ANTIALIAS)
-        # self.canvas.paste(today_weather_ic, (0, 0))
-        # self.print()
+        today_weather_ic = Image.open(os.path.join(image_dir, "demo.png")).resize((800, 480),Image.ANTIALIAS)
+        self.canvas.paste(today_weather_ic, (0, 0))
+        self.print()
+        logging.debug("执行完毕")
         self.printToScreen()
 
     # 初始化画布、画笔
@@ -168,7 +169,7 @@ class CalendarPainter(object):
 
     # 输出最后的图片
     def print(self):
-        self.canvas.save('blur.jpg', 'jpeg')
+        self.canvas.save('blur.png', 'png')
 
     def printToScreen(self):
         try:
