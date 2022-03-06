@@ -1,3 +1,4 @@
+# TODO @solinzon: 改成单例模式
 class WordWrap:
 
     def get_paragraph(self, text):
