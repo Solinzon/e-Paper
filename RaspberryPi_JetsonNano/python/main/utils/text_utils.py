@@ -1,5 +1,12 @@
-# TODO @solinzon: 改成单例模式
 class WordWrap:
+
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super().__new__(cls)
+        return cls.instance
+
+    def __init__(self):
+        pass
 
     def get_paragraph(self, text):
         # 所有文字的段落
@@ -44,6 +51,8 @@ class WordWrap:
         # 段落 , 行数, 行高
         self.paragraph, self.note_height, self.line_height = self.split_text()
         x, y = xy[0], xy[1]
+        line_count = 0
         for paragraph, line_count in self.paragraph:
             self.draw.text((x, y), paragraph, 0, font=self.font)
             y += self.line_height * line_count
+        return line_count , y

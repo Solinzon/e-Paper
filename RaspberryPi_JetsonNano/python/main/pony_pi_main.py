@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "main"))
+
 import datetime
 from datetime import date
 from PIL import Image, ImageDraw, ImageFont
@@ -25,6 +26,7 @@ from lunar_python.util import HolidayUtil
 from waveshare_epd import epd7in5_V2
 from main.utils.weather_manager import WeatherManager
 from main.utils.text_utils import WordWrap
+from main.utils.paragraph_manager import ParagraphManager
 
 logging.basicConfig(level=logging.DEBUG,
                     filemode='w', format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y-%d-%m %H:%M:%S')
@@ -77,7 +79,6 @@ class CalendarPainter(object):
         logging.debug("执行完毕")
         self.print_to_screen()
 
-
     # 初始化画布、画笔
     def init_canvas(self):
         logging.debug("init_canvas")
@@ -122,7 +123,8 @@ class CalendarPainter(object):
         day_x = calendar_center_x - day_w / 2
         day_y = calendar_center_y - day_h / 2
         self.draw.text((day_x, day_y), day, font=font144, fill=0)
-        days = (datetime.datetime(cur_date.year, cur_date.month, cur_date.day) - datetime.datetime(2013, 3, 23)).days + 1
+        days = (datetime.datetime(cur_date.year, cur_date.month, cur_date.day) - datetime.datetime(2013, 3,
+                                                                                                   23)).days + 1
         self.draw.text((calendar_center_x + day_w / 2 + 20, calendar_center_y + 60), "在一起的第" + days.__str__() + "天",
                        font=font12_light,
                        fill=0)
@@ -142,7 +144,7 @@ class CalendarPainter(object):
         locationId = WeatherManager().parse_location_id(weather_City_Info)
         # 获取现在天气信息
         cur_weather_dic = WeatherManager().load_cur_weather(locationId)
-    
+
         # 获取3天的天气信息
         three_day_weather_dic = WeatherManager().load_3d_weather(locationId)
         logging.debug("city = " + city + ", location = " + location + " , locationId = " + locationId)
@@ -159,7 +161,7 @@ class CalendarPainter(object):
         tomorrow_icon = WeatherManager().parse_tomorrow_weather_icon(three_day_weather_dic)
         # 明天的日期
         tomorrow_date = WeatherManager().parse_tomorrow_date(three_day_weather_dic)
-        
+
         # 天气指数
         today_indices_dic = WeatherManager().load_cur_indices(locationId)
         today_in_dices = WeatherManager().parse_cur_indices(today_indices_dic)
@@ -184,8 +186,8 @@ class CalendarPainter(object):
         offset_y = int(cur_weather_center_y - cur_weather_ic_h)
         self.canvas.paste(cur_weather_icon.resize(
             (cur_weather_ic_w, cur_weather_ic_h)),
-                          (int(cur_weather_center_x - offset),
-                           offset_y - 8))
+            (int(cur_weather_center_x - offset),
+             offset_y - 8))
         self.draw.text((cur_weather_center_x + offset - cur_weather_w, offset_y),
                        cur_temperature, font=font24_bold, fill=0)
 
@@ -200,7 +202,7 @@ class CalendarPainter(object):
                            font=font14,
                            fill=0)
         else:
-            WordWrap().draw_text(xy=(zero_x + self.padding, cur_weather_center_y + cur_weather_h), text= cur_desc,
+            WordWrap().draw_text(xy=(zero_x + self.padding, cur_weather_center_y + cur_weather_h), text=cur_desc,
                                  font=font14,
                                  draw=self.draw, width=self.weather_w - 26)
 
@@ -211,26 +213,33 @@ class CalendarPainter(object):
         self.draw.text((zero_x + self.padding, 310), "明天", font=font14_bold, fill=0)
         self.draw.text((zero_x + self.padding, 310 + 20), tomorrow_date, font=font14, fill=0)
         tomorrow_weather_w, tomorrow_weather_h = 40, 40
-        self.canvas.paste(tomorrow_icon.resize((tomorrow_weather_w, tomorrow_weather_h)), (cur_weather_center_x.__int__() - (tomorrow_weather_w / 2).__int__(), 310))
+        self.canvas.paste(tomorrow_icon.resize((tomorrow_weather_w, tomorrow_weather_h)),
+                          (cur_weather_center_x.__int__() - (tomorrow_weather_w / 2).__int__(), 310))
         temp_text = tomorrow_temp_min + "°" + " ~ " + tomorrow_temp_max + "°"
         self.draw.text((zero_x + 180, 310 + 10), temp_text, font=font14, fill=0)
-
 
     def draw_tips(self):
         zero_x = 0
         zero_y = self.calendar_h
-        self.draw.text((zero_x + self.padding, zero_y + self.padding), "乌鸡汤", font=font18_bold, fill=0)
+        self.draw.text((zero_x + self.padding, zero_y + self.padding), "ONE · 一个", font=font18_bold, fill=0)
         # 最多100字 ，70字最佳
-        tips = "年初的时候多立些Flag准没错，因为这些明年还能再用一次。"
-        tip_w, tip_h = font20.getsize(tips)
-        if tip_w < self.tips_w - self.padding * 2:
-            self.draw.text((zero_x + self.padding, zero_y + 40), tips, font=font20, fill=0)
-
+        data = ParagraphManager().get_paragraph()
+        tips = data.get("content")
+        source = data.get("from")
+        if (len(tips) > 70):
+            tips = "树梢间泻下的秋日阳光，在她肩部一闪一闪地跳跃着。"
+            source = "挪威的森林"
+        source = " -- 「 " + source + " 」"
+        source_w, source_h = font20.getsize(source)
+        line_count, y = WordWrap().draw_text(xy=(zero_x + self.padding, zero_y + 35), text=tips,
+                                             font=font20,
+                                             draw=self.draw, width=self.tips_w - self.padding * 4)
+        if line_count < 3:
+            # 在line_count的下一行写
+            self.draw.text((self.tips_w - self.padding - source_w, y), source, font=font20, fill=0)
         else:
-            WordWrap().draw_text(xy=(zero_x + self.padding, zero_y + 40), text=tips,
-                                 font=font20,
-                                 draw=self.draw, width=self.tips_w - self.padding * 4)
-
+            # 在第3行写
+            self.draw.text((self.tips_w - self.padding - source_w, y - source_h), source, font=font20, fill=0)
 
     # 输出最后的图片
     def print_img(self):
