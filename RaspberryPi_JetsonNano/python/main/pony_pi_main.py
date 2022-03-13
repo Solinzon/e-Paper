@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "main"))
 
+from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 from datetime import date
 from PIL import Image, ImageDraw, ImageFont
@@ -15,12 +16,12 @@ from cn2an import cn2an, an2cn
 from lunar_python import Lunar, Solar
 from lunar_python.util import HolidayUtil
 
-# pip3 install opencv-python
 # pip3 install requests
 # pip3 install cn2an
 # pip3 install pillow
 # pip3 install requests-html
 # matplotlib、pandas、tqdm、lunar_python
+# APScheduler
 
 # 墨水屏依赖
 from waveshare_epd import epd7in5_V2
@@ -64,10 +65,54 @@ class CalendarPainter(object):
     tips_w = 800
     tips_h = 120
 
+    allow_draw_calendar = False
+    allow_draw_weather = False
+    allow_draw_tips = False
+
     def __init__(self):
         # 给个默认值
         self.canvas = Image.new('1', (800, 480), 255)
         self.draw = ImageDraw.Draw(self.canvas)
+
+    def start(self):
+        self.draw_all_job()
+        scheduler = BackgroundScheduler()
+        # 每天 00:00:10 更新日历
+        scheduler.add_job(self.draw_calendar_job, "cron", day_of_week="0-6", hour=00, minute=00, second=10)
+        # 每隔一个小时更新天气
+        scheduler.add_job(self.draw_weather_job, "interval", hours=1)
+        # 每天 00:10:10 更新tips
+        scheduler.add_job(self.draw_tips_job, "cron", day_of_week="0-6", hour=00, minute=10, second=10)
+        # 每天 08:30:30 更新所有
+        # 每天 18:30:30 更新所有
+        scheduler.add_job(self.draw_all_job, "cron", day_of_week="0-6", hour=8, minute=30, second=30)
+        scheduler.add_job(self.draw_all_job, "cron", day_of_week="0-6", hour=18, minute=30, second=30)
+        scheduler.start()
+
+    def draw_all_job(self):
+        self.toggle(draw_calendar=True, draw_weather=True, draw_tips=True)
+        self.paint()
+        self.toggle()
+
+    def draw_calendar_job(self):
+        self.toggle(draw_calendar=True)
+        self.paint()
+        self.toggle()
+
+    def draw_weather_job(self):
+        self.toggle(draw_weather=True)
+        self.paint()
+        self.toggle()
+
+    def draw_tips_job(self):
+        self.toggle(draw_tips=True)
+        self.paint()
+        self.toggle()
+
+    def toggle(self, draw_calendar=False, draw_weather=False, draw_tips=False):
+        self.allow_draw_calendar = draw_calendar
+        self.allow_draw_weather = draw_weather
+        self.allow_draw_tips = draw_tips
 
     def paint(self):
         self.init_canvas()
@@ -75,9 +120,9 @@ class CalendarPainter(object):
         self.draw_calendar()
         self.draw_weather()
         self.draw_tips()
-        self.print_img()
-        logging.debug("执行完毕")
+        # self.print_img()
         self.print_to_screen()
+        logging.debug("执行完毕")
 
     # 初始化画布、画笔
     def init_canvas(self):
@@ -94,6 +139,8 @@ class CalendarPainter(object):
 
     # 画日历部分
     def draw_calendar(self):
+        if self.allow_draw_calendar != True:
+            return
         # 画日期、农历、节日
         weeks = ["周一", "周二", "周三", "周四", "周五", "周六", "周日", ]
         cur_weeks = weeks[time.localtime(time.time())[6]]
@@ -129,7 +176,9 @@ class CalendarPainter(object):
                        font=font12_light,
                        fill=0)
 
-    def draw_weather(self) -> bool:
+    def draw_weather(self):
+        if self.allow_draw_weather != True:
+            return
         logging.debug("draw_weather")
         # 准备数据
         # 定位数据，来自高德
@@ -219,9 +268,11 @@ class CalendarPainter(object):
         self.draw.text((zero_x + 180, 310 + 10), temp_text, font=font14, fill=0)
 
     def draw_tips(self):
+        if self.allow_draw_tips != True:
+            return
         zero_x = 0
         zero_y = self.calendar_h
-        self.draw.text((zero_x + self.padding, zero_y + self.padding), "ONE · 一个", font=font18_bold, fill=0)
+        self.draw.text((zero_x + self.padding, zero_y + self.padding - 4), "ONE · 一个", font=font18_bold, fill=0)
         # 最多100字 ，70字最佳
         data = ParagraphManager().get_paragraph()
         tips = data.get("content")
@@ -266,4 +317,6 @@ class CalendarPainter(object):
 
 
 painter = CalendarPainter()
-painter.paint()
+painter.start()
+while True:
+    time.sleep(1)

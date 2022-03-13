@@ -1,9 +1,10 @@
-import requests
-import socket
 import os
 from ipaddress import ip_address, IPv6Address, IPv4Address
 from PIL import Image, ImageDraw, ImageFont
 from requests_html import HTMLSession
+import time
+import requests
+from requests.adapters import HTTPAdapter
 
 icon_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'assets/image/icons')
 
@@ -21,7 +22,9 @@ class WeatherManager(object):
         return cls.instance
 
     def __init__(self):
-        pass
+        self.network = requests.Session()
+        self.network.mount('http://', HTTPAdapter(max_retries=3))
+        self.network.mount('https://', HTTPAdapter(max_retries=3))
 
     def parse_city(self, locationDic: dict) -> str:
         city = "中国"
@@ -48,7 +51,7 @@ class WeatherManager(object):
                 "type": 4 if self.are_ip_v4(ip) else 6,
 
             }
-            r = requests.get("https://restapi.amap.com/v5/ip", params=parameters, verify=False)
+            r = self.network.get("https://restapi.amap.com/v5/ip", params=parameters, verify=False,timeout=10)
             locationDic = r.json()
             print("get_location_dic : " + r.text)
         except:
@@ -60,13 +63,13 @@ class WeatherManager(object):
     def qurey_ip_address(self):
         ip = ""
         try:
-            ip = requests.get("http://ifconfig.me/ip", timeout=1).text.strip()
+            ip = self.network.get("http://ifconfig.me/ip", timeout=1).text.strip()
         except:
             ip = ""
             pass
         if not (self.are_ip_v4(ip) or self.are_ip_v6(ip)):
             try:
-                ip = requests.get("http://icanhazip.com", timeout=1).text.strip()
+                ip = self.network.get("http://icanhazip.com", timeout=1).text.strip()
             except:
                 ip = ""
                 pass
@@ -95,7 +98,7 @@ class WeatherManager(object):
                 "key": self.qWeatherKey,
                 "location": location
             }
-            r = requests.get("https://geoapi.qweather.com/v2/city/lookup", params=parameters, verify=False)
+            r = self.network.get("https://geoapi.qweather.com/v2/city/lookup", params=parameters, verify=False)
             data = r.json()
             print("get_weather_city_info : " + r.text)
         except:
@@ -117,7 +120,7 @@ class WeatherManager(object):
                 "key": self.qWeatherKey,
                 "location": locationId
             }
-            r = requests.get("https://devapi.qweather.com/v7/weather/now", params=parameters, verify=False)
+            r = self.network.get("https://devapi.qweather.com/v7/weather/now", params=parameters, verify=False,timeout=10)
             data = r.json()
             print("get_cur_weather : " + r.text)
         except:
@@ -132,7 +135,7 @@ class WeatherManager(object):
                 "location": locationId,
                 "type": "8"
             }
-            r = requests.get("https://devapi.qweather.com/v7/indices/1d", params=parameters, verify=False)
+            r = self.network.get("https://devapi.qweather.com/v7/indices/1d", params=parameters, verify=False,timeout=10)
             data = r.json()
             print("load_cur_indices : " + r.text)
         except:
@@ -148,8 +151,7 @@ class WeatherManager(object):
             return ""
         print("load_cur_desc : " + element.text)
         return element.text
-        # r = requests.get("https://www.qweather.com/weather/new-territories-" + locationId +".html", verify=False)
-        # return r.text
+
 
 
     def parse_cur_temperature(self, weatherDic) -> str:
@@ -186,7 +188,7 @@ class WeatherManager(object):
                 "key": self.qWeatherKey,
                 "location": locationId
             }
-            r = requests.get("https://devapi.qweather.com/v7/weather/3d", params=parameters, verify=False)
+            r = self.network.get("https://devapi.qweather.com/v7/weather/3d", params=parameters, verify=False,timeout=10)
             data = r.json()
             print("load_3d_weather : " + r.text)
         except:
