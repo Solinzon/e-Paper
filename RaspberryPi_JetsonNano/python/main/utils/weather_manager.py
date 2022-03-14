@@ -16,10 +16,10 @@ class WeatherManager(object):
     # 和风key
     qWeatherKey = "cfad7e010122476bbf94b6183f8904ec"
 
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super().__new__(cls)
-        return cls.instance
+    # def __new__(cls):
+    #     if not hasattr(cls, 'instance'):
+    #         cls.instance = super().__new__(cls)
+    #     return cls.instance
 
     def __init__(self):
         self.network = requests.Session()
