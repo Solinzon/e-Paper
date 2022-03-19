@@ -1,10 +1,10 @@
 import os
 import sys
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "main"))
 
+from main.utils.splash_utils import SplashUtils
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 from datetime import date
@@ -15,6 +15,7 @@ from subprocess import run, PIPE
 from cn2an import cn2an, an2cn
 from lunar_python import Lunar, Solar
 from lunar_python.util import HolidayUtil
+import random
 
 # pip3 install requests
 # pip3 install cn2an
@@ -159,11 +160,16 @@ class CalendarPainter(object):
         self.draw = ImageDraw.Draw(self.canvas)
 
     def paint_splash(self):
-        family = Image.open(os.path.join(image_dir, "splash.jpg"))
-        self.canvas.paste(family,
-            (0,0))
-        self.print_img()
-        self.print_to_screen()
+        try :
+            index = SplashUtils().get_splash_pic_name()
+            family = Image.open(os.path.join(image_dir, "splash_" + str(index) + ".jpg"))
+            self.canvas.paste(family,
+                              (0, 0))
+            self.print_img()
+            self.print_to_screen()
+        except:
+            pass
+
 
     # 画分割线， 将屏幕分成3部分
     def draw_divider(self):
