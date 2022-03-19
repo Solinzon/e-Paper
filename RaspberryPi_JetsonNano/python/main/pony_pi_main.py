@@ -79,6 +79,7 @@ class CalendarPainter(object):
 
     def start(self):
         logging.debug("开始执行程序.... ，networkAvailable = " + self.networkAvailable.__str__())
+        self.paint_splash()
         # 检查网络
         while not self.networkAvailable:
             logging.debug("ping -c 3 www.baidu.com")
@@ -93,6 +94,8 @@ class CalendarPainter(object):
                 logging.debug("网络已连接....")
                 self.networkAvailable = True
             time.sleep(1)
+
+        time.sleep(5)
 
         logging.debug("开始绘制....")
 
@@ -144,7 +147,7 @@ class CalendarPainter(object):
         self.draw_calendar()
         self.draw_weather()
         self.draw_tips()
-        # self.print_img()
+        self.print_img()
         self.print_to_screen()
         logging.debug("执行完毕")
 
@@ -154,6 +157,13 @@ class CalendarPainter(object):
         # 创建画布
         self.canvas = Image.new('1', (800, 480), 255)
         self.draw = ImageDraw.Draw(self.canvas)
+
+    def paint_splash(self):
+        family = Image.open(os.path.join(image_dir, "splash.jpg"))
+        self.canvas.paste(family,
+            (0,0))
+        self.print_img()
+        self.print_to_screen()
 
     # 画分割线， 将屏幕分成3部分
     def draw_divider(self):
