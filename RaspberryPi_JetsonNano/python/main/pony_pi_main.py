@@ -330,7 +330,7 @@ class CalendarPainter(object):
 
     # 输出最后的图片
     def print_img(self):
-        self.canvas.save("main/assets/image/calendar.png", "png")
+        self.canvas.save(os.path.join(image_dir,"calendar.png"), "png")
 
     def print_to_screen(self):
         try:
