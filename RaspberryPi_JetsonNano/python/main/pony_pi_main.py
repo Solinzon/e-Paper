@@ -95,7 +95,7 @@ class CalendarPainter(object):
                 self.networkAvailable = True
             time.sleep(1)
 
-        time.sleep(5)
+        time.sleep(10)
 
         logging.debug("开始绘制....")
 
