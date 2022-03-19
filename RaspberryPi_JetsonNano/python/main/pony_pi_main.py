@@ -11,7 +11,7 @@ from datetime import date
 from PIL import Image, ImageDraw, ImageFont
 import logging
 import time
-
+from subprocess import run, PIPE
 from cn2an import cn2an, an2cn
 from lunar_python import Lunar, Solar
 from lunar_python.util import HolidayUtil
@@ -30,6 +30,7 @@ from main.utils.text_utils import WordWrap
 from main.utils.paragraph_manager import ParagraphManager
 
 logging.basicConfig(level=logging.DEBUG,
+                    filename='pony_pi_main_log.log',
                     filemode='w', format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y-%d-%m %H:%M:%S')
 
 font_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets/font')
@@ -69,12 +70,32 @@ class CalendarPainter(object):
     # allow_draw_weather = False
     allow_refresh_tips = False
 
+    networkAvailable=False
+
     def __init__(self):
         # 给个默认值
         self.canvas = Image.new('1', (800, 480), 255)
         self.draw = ImageDraw.Draw(self.canvas)
 
     def start(self):
+        logging.debug("开始执行程序.... ，networkAvailable = " + self.networkAvailable.__str__())
+        # 检查网络
+        while not self.networkAvailable:
+            logging.debug("ping -c 3 www.baidu.com")
+            r = run("ping -c 3 www.baidu.com",
+                    stdout=PIPE,
+                    stderr=PIPE,
+                    stdin=PIPE,
+                    shell=True)
+            if r.returncode:
+                logging.debug("网络未连接....")
+            else:
+                logging.debug("网络已连接....")
+                self.networkAvailable = True
+            time.sleep(1)
+
+        logging.debug("开始绘制....")
+
         self.draw_job(True)
         scheduler = BackgroundScheduler()
         # 每天 00:00:10 更新日历
@@ -316,4 +337,4 @@ class CalendarPainter(object):
 painter = CalendarPainter()
 painter.start()
 while True:
-    time.sleep(1)
+    time.sleep(24*60*60)
