@@ -31,8 +31,8 @@ from main.utils.text_utils import WordWrap
 from main.utils.paragraph_manager import ParagraphManager
 
 logging.basicConfig(level=logging.DEBUG,
-                    filename='pony_pi_main_log.log',
-                    filemode='a', format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y-%d-%m %H:%M:%S')
+                    # filename='pony_pi_main_log.log',
+                    filemode='w', format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y-%d-%m %H:%M:%S')
 
 font_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets/font')
 image_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets/image')
@@ -164,11 +164,10 @@ class CalendarPainter(object):
         try :
             self.init_canvas()
             index = SplashUtils().get_splash_pic_name()
-            print("paint_splash index = " + str(index))
             family = Image.open(os.path.join(splash_dir, "splash_" + str(index) + ".jpg"))
-            self.canvas.paste(family,
-                              (0, 0))
-            self.print_img()
+            print("paint_splash ：splash_" + str(index) + ".jpg")
+            self.canvas.paste(family,(0, 0))
+            # self.print_img()
             self.print_to_screen()
         except:
             pass
