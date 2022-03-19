@@ -32,7 +32,7 @@ from main.utils.paragraph_manager import ParagraphManager
 
 logging.basicConfig(level=logging.DEBUG,
                     filename='pony_pi_main_log.log',
-                    filemode='w', format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y-%d-%m %H:%M:%S')
+                    filemode='a', format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y-%d-%m %H:%M:%S')
 
 font_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets/font')
 image_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets/image')
@@ -160,6 +160,7 @@ class CalendarPainter(object):
         self.draw = ImageDraw.Draw(self.canvas)
 
     def paint_splash(self):
+        logging.debug("paint_splash 画splash页面")
         try :
             self.init_canvas()
             index = SplashUtils().get_splash_pic_name()
