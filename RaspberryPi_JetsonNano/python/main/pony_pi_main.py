@@ -1,5 +1,8 @@
 import os
 import sys
+
+from apscheduler.schedulers.blocking import BlockingScheduler
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "main"))
@@ -101,7 +104,7 @@ class CalendarPainter(object):
         logging.debug("开始绘制....")
 
         self.draw_job(True)
-        scheduler = BackgroundScheduler()
+        scheduler = BlockingScheduler()
         # 每天 00:00:10 更新日历
         # scheduler.add_job(self.draw_calendar_job, "cron", day_of_week="0-6", hour=00, minute=00, second=10)
         # 每隔一个小时更新天气
@@ -354,5 +357,3 @@ class CalendarPainter(object):
 
 painter = CalendarPainter()
 painter.start()
-while True:
-    time.sleep(24*60*60)
